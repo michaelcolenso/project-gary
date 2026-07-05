@@ -1,0 +1,17 @@
+[Unit]
+Description=OpportunityForge API — FastAPI backend
+After=network.target
+
+[Service]
+Type=exec
+User=openclaw
+WorkingDirectory=/home/openclaw/project-gary/backend
+Environment=PATH=/home/openclaw/project-gary/backend/.venv/bin:/usr/local/bin:/usr/bin:/bin
+Environment=DATABASE_URL=sqlite:///./opportunityforge.db
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/home/openclaw/project-gary/backend/.venv/bin/uvicorn opportunityforge.main:app --host 0.0.0.0 --port 8000 --workers 1
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
