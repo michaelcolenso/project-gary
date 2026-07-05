@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any
 from uuid import UUID, uuid4
@@ -118,3 +119,30 @@ class Opportunity(SQLModel, table=True):
     score_breakdown: dict[str, Any] = SQLField(default_factory=dict, sa_column=Column(JSON))
     friction_profile: dict[str, Any] = SQLField(default_factory=dict, sa_column=Column(JSON))
     dossier: dict[str, Any] = SQLField(default_factory=dict, sa_column=Column(JSON))
+    linked_dataset_ids: list[str] = SQLField(default_factory=list, sa_column=Column(JSON))
+
+
+class DatasetLink(SQLModel, table=True):
+    __tablename__ = "datasetlink"
+
+    id: UUID = SQLField(default_factory=uuid4, primary_key=True)
+    source_dataset_id: UUID = SQLField(index=True)
+    target_dataset_id: UUID = SQLField(index=True)
+
+    # How they connect
+    match_type: str = "composite"  # entity_match | geo_overlap | temporal_overlap | join_key | composite
+    source_join_key: str = ""
+    target_join_key: str = ""
+
+    # Structural confidence (Layer 1 — automated)
+    entity_overlap_score: float = 0.0
+    geo_overlap_score: float = 0.0
+    temporal_overlap_score: float = 0.0
+    link_confidence: float = 0.0  # aggregate of the above
+
+    # Agent evaluation (Layer 2 — me)
+    compound_value_score: int | None = SQLField(default=None, ge=1, le=10)
+    compound_rationale: str | None = None
+    evaluated_at: datetime | None = None
+
+    created_at: datetime = SQLField(default_factory=lambda: datetime.now(timezone.utc))
