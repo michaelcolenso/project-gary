@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+*.db
+
+# Frontend
+frontend/node_modules/
+frontend/build/
+frontend/.svelte-kit/
+
+# Pipeline output
+backend/pipeline_output/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
