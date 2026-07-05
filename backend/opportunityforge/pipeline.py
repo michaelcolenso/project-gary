@@ -265,10 +265,13 @@ class PipelineSession:
         regulatory_friction: int = 5,
         maintenance_friction: int = 5,
         friction_notes: dict[str, str] | None = None,
+        linked_dataset_ids: list[str] | None = None,
     ) -> Opportunity:
         """Score the opportunity and create a persisted Opportunity record.
         
         The score product is: demand × decision_value × monetization_ease × defensibility × strategic_fit
+        
+        Pass linked_dataset_ids to mark this opportunity as compound (multi-dataset).
         """
         assert self.dataset_id is not None, "Scout a dataset first"
 
@@ -301,6 +304,7 @@ class PipelineSession:
             score_breakdown=score_breakdown,
             friction_profile=friction_profile,
             dossier={},
+            linked_dataset_ids=linked_dataset_ids or [],
         )
         with DBSession(engine, expire_on_commit=False) as db:
             db.add(opp)

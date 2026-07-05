@@ -11,6 +11,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from itertools import combinations
 from typing import Any
+from uuid import UUID
 
 from sqlmodel import Session as DBSession, create_engine, select
 
@@ -246,8 +247,8 @@ def persist_link(
 ) -> DatasetLink:
     """Persist a link candidate that I've evaluated."""
     link = DatasetLink(
-        source_dataset_id=source_id,
-        target_dataset_id=target_id,
+        source_dataset_id=UUID(source_id) if isinstance(source_id, str) else source_id,
+        target_dataset_id=UUID(target_id) if isinstance(target_id, str) else target_id,
         match_type=match_type,
         source_join_key=source_join_key,
         target_join_key=target_join_key,
