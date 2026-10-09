@@ -110,6 +110,20 @@ class FrictionProfile(BaseModel):
     notes: dict[str, str] = Field(default_factory=dict)
 
 
+class GateEvaluationRequest(BaseModel):
+    """Inputs for the Layer 2 evaluation-gate pipeline (evaluate_pair)."""
+
+    source_title: str
+    target_title: str
+    link_confidence: float = Field(ge=0.0, le=1.0)
+    population_overlap_pct: float = Field(ge=0.0, le=1.0)
+    competitors: list[str] = Field(default_factory=list)
+    buyer_job_title: str = ""
+    buyer_company: str = ""
+    price_monthly: int = 0
+    killer_answer: str = ""
+
+
 class Opportunity(SQLModel, table=True):
     id: UUID = SQLField(default_factory=uuid4, primary_key=True)
     title: str
