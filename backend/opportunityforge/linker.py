@@ -20,6 +20,7 @@ from opportunityforge.models.domain import (
     DatasetProfile,
     DatasetRecord,
 )
+from opportunityforge.population_overlap import population_overlap_gate
 
 DB_PATH = __import__("opportunityforge.pipeline", fromlist=["DB_PATH"]).DB_PATH
 engine = create_engine(
@@ -149,11 +150,15 @@ def _temporal_overlap(a: DatasetProfile, b: DatasetProfile) -> float:
 # ── Public API ──────────────────────────────────────────────────
 
 
-def find_potential_links() -> list[dict[str, Any]]:
+def find_potential_links(check_population_overlap: bool = True) -> list[dict[str, Any]]:
     """Scan all dataset pairs and return ranked link candidates.
 
     Layer 1 (automated) — suggests links based on structural match.
-    Layer 2 (agent) — I evaluate each candidate and assign compound value.
+    Layer 1.5 (automated) — population_overlap_gate() hard-kills pairs whose
+        real-world entity populations don't actually intersect (set
+        check_population_overlap=False to skip — e.g. in tests/offline runs
+        where the network-dependent entity samplers aren't available).
+    Layer 2 (agent) — I evaluate each surviving candidate and assign compound value.
     """
     with DBSession(engine, expire_on_commit=False) as db:
         records = db.exec(
@@ -209,7 +214,7 @@ def find_potential_links() -> list[dict[str, Any]]:
             & {_entity_family(e) for e in p2.entity_types if _entity_family(e)}
         )
 
-        candidates.append({
+        candidate = {
             "source_dataset_id": str(r1.id),
             "source_title": r1.title,
             "source_entity_types": p1.entity_types,
@@ -226,7 +231,18 @@ def find_potential_links() -> list[dict[str, Any]]:
             "source_join_key": ", ".join(p1.join_keys),
             "target_join_key": ", ".join(p2.join_keys),
             "compound_value_score": None,  # Layer 2 — I fill this in
-        })
+        }
+
+        if check_population_overlap:
+            overlap = population_overlap_gate(
+                str(r1.id), str(r2.id), r1.title, r2.title
+            )
+            candidate["population_overlap"] = overlap
+            if overlap["killed"]:
+                # Layer 1.5 hard kill — never reaches Layer 2 evaluation.
+                continue
+
+        candidates.append(candidate)
 
     candidates.sort(key=lambda c: c["link_confidence"], reverse=True)
     return candidates
